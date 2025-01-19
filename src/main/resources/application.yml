@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    properties:
+      requireSecureTransport: ON
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/nitin?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: ROOT
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+  application:
+    name: admin-service
+server:
+  port: 8992
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    lease-renewal-interval-in-seconds: 30  # Set heartbeat renewal interval
+    lease-expiration-duration-in-seconds: 90  # Set lease expiration duration
+    prefer-ip-address: true  # Prefer IP address instead of hostname for the registration
+
