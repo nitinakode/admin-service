@@ -1,8 +1,8 @@
 package com.security.admin.config;
 
+import com.security.admin.exception.CustomAccessDeniedHandler;
 import com.security.admin.security.CustomUserDetailsService;
 import com.security.admin.security.JwtTokenFilter;
-import com.security.admin.exception.CustomAccessDeniedHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,52 +22,54 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class AuthConfig {
 
+  @Autowired private CustomAccessDeniedHandler customAccessDeniedHandler;
 
-        @Autowired
-        private CustomAccessDeniedHandler customAccessDeniedHandler;
+  @Bean
+  public UserDetailsService userDetailsService() {
+    return new CustomUserDetailsService();
+  }
 
-        @Bean
-        public UserDetailsService userDetailsService() {
-            return new CustomUserDetailsService();
-        }
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http.csrf()
+        .disable()
+        .authorizeRequests()
+        .requestMatchers("/auth/register", "/auth/login", "/auth/validate")
+        .permitAll() // Allow access to these endpoints
+        .requestMatchers("/admin/**")
+        .hasRole("ADMIN") // Restrict /admin/** to ADMIN role
+        .anyRequest()
+        .authenticated() // All other endpoints require authentication
+        .and()
+        .exceptionHandling()
+        .accessDeniedHandler(
+            customAccessDeniedHandler) // Use the custom access denied handler for authorization
+        // issues
+        .and()
+        .addFilterBefore(
+            new JwtTokenFilter(),
+            UsernamePasswordAuthenticationFilter
+                .class); // Add JWT token filter before default authentication filter
 
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            http.csrf().disable()
-                    .authorizeRequests()
-                    .requestMatchers("/auth/register", "/auth/login", "/auth/validate").permitAll()  // Allow access to these endpoints
-                    .requestMatchers("/admin/**").hasRole("ADMIN")  // Restrict /admin/** to ADMIN role
-                    .anyRequest().authenticated()  // All other endpoints require authentication
-                    .and()
-                    .exceptionHandling()
-                    .accessDeniedHandler(customAccessDeniedHandler)  // Use the custom access denied handler for authorization issues
-                    .and()
-                    .addFilterBefore(new JwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);  // Add JWT token filter before default authentication filter
+    return http.build();
+  }
 
-            return http.build();
-        }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 
+  @Bean
+  public AuthenticationProvider authenticationProvider() {
+    DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+    authenticationProvider.setUserDetailsService(userDetailsService());
+    authenticationProvider.setPasswordEncoder(passwordEncoder());
+    return authenticationProvider;
+  }
 
-
-
-
-
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationProvider authenticationProvider(){
-        DaoAuthenticationProvider authenticationProvider=new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(userDetailsService());
-        authenticationProvider.setPasswordEncoder(passwordEncoder());
-        return authenticationProvider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+  @Bean
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
+      throws Exception {
+    return config.getAuthenticationManager();
+  }
 }
