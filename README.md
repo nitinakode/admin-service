@@ -128,8 +128,8 @@ This system highlights my skills in backend development, secure authentication, 
 
 1. **Clone the repository**:
     ```bash
-    git clone <repository-url>
-    cd <project-directory>
+    git clone https://github.com/nitinakode/admin-service.git
+    cd admin-service
     ```
 
 2. **Set up the database**:
